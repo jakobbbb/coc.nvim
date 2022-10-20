@@ -3,7 +3,7 @@ import { ChildProcess, exec, ExecOptions } from 'child_process'
 import debounce from 'debounce'
 import fs from 'fs'
 import path from 'path'
-import { Disposable, MarkupContent, MarkupKind } from 'vscode-languageserver-protocol'
+import { CancellationToken, Disposable, MarkupContent, MarkupKind } from 'vscode-languageserver-protocol'
 import { URI } from 'vscode-uri'
 import which from 'which'
 import { isUrl } from './is'
@@ -160,13 +160,14 @@ export function delay(func: () => void, defaultDelay: number): ((ms?: number) =>
   return fn as any
 }
 
-export function concurrent<T>(arr: T[], fn: (val: T) => Promise<void>, limit = 3): Promise<void> {
+export function concurrent<T>(arr: T[], fn: (val: T) => Promise<void>, limit = 3, token?: CancellationToken): Promise<void> {
   if (arr.length == 0) return Promise.resolve()
   let finished = 0
   let total = arr.length
   let remain = arr.slice()
   return new Promise(resolve => {
     let run = (val): void => {
+      if (token && token.isCancellationRequested) return resolve()
       let cb = () => {
         finished = finished + 1
         if (finished == total) {
