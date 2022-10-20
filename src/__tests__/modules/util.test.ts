@@ -1,5 +1,6 @@
 import style from 'ansi-styles'
 import * as assert from 'assert'
+import which from 'which'
 import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -26,6 +27,7 @@ import * as positions from '../../util/position'
 import { terminate } from '../../util/processes'
 import * as strings from '../../util/string'
 import * as textedits from '../../util/textedit'
+import * as ping from '../../util/ping'
 import { filter } from '../../util/async'
 import helper, { createTmpFile } from '../helper'
 const createLogger = require('../../util/logger')
@@ -1241,6 +1243,38 @@ describe('diff', () => {
       expect(n).toBe(3)
       expect(res).toEqual(['a', 'b', 'c'])
       expect(finished).toEqual(true)
+    })
+  })
+
+  describe('ping', () => {
+    it('should get ping config', async () => {
+      let check = (platform: NodeJS.Platform) => {
+        let res = ping.getPing(platform)
+        if (res) {
+          expect(fs.existsSync(res.bin)).toBe(true)
+        }
+      }
+      check('darwin')
+      check('linux')
+      check('win32')
+      check('android')
+      check('freebsd')
+      let spy = jest.spyOn(which, 'sync').mockImplementation(() => {
+        throw Error('not found')
+      })
+      check('freebsd')
+      spy.mockRestore()
+    })
+
+    it('should find best host', async () => {
+      let res = await ping.findBestHost([], 500)
+      expect(res).toBeUndefined()
+      res = await ping.findBestHost(['www.baidu.com', 'www.google.com'], 1)
+      expect(res).toBeUndefined()
+      res = await ping.findBestHost(['www.baidu.com', 'www.google.com'], 500, 'not_exists_bin')
+      expect(res).toBeUndefined()
+      res = await ping.findBestHost(['127.0.0.1', 'registry.npmjs.org', 'registry.yarnpkg.com', 'registry.npmmirror.com'], 500)
+      expect(res).toBeDefined()
     })
   })
 })

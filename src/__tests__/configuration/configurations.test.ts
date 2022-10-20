@@ -293,9 +293,9 @@ describe('Configurations', () => {
         modifyConfiguration: async () => {}
       })
       disposables.push(configurations)
-      configurations.extendsDefaults({ 'npm.binPath': 'cnpm' }, 'test')
+      configurations.extendsDefaults({ 'http.proxyStrictSSL': false }, 'test')
       let o = configurations.configuration.defaults.contents
-      expect(o.npm.binPath).toBe('npm')
+      expect(o.http.proxyStrictSSL).toBe(true)
     })
 
     it('should update configuration', async () => {
